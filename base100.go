@@ -28,6 +28,12 @@ func Encode(dst, src []byte) {
 		*/
 		dst[0] = 0xf0
 		dst[1] = 0x9f
+		// These bit shifting variations from Rust version don't appear to
+		// impact speed at all when benchmarking here, likely the Go compiler
+		// is smart enough to apply them already automatically?
+		//
+		// dst[2] = byte(((uint16(b) + 55) >> 6) + 143)
+		// dst[3] = (b+55)&0x3f + 128
 		dst[2] = byte((uint16(b)+55)/64 + 143)
 		dst[3] = (b+55)%64 + 128
 
@@ -80,6 +86,20 @@ func Decode(dst, src []byte) (n int, err error) {
 		pos4 := src[4*i+3]
 		dst[i] = (pos3-143)*64 + pos4 - 128 - 55
 	}
+
+	/*
+		Version of  the loop that employs BCE similar to Encode(), however it
+		actually ends up being slower when benchmarked.
+
+			for len(dst) >= 1 && len(src) >= 4 {
+				chunk := src[:4]
+				dst[0] = (chunk[2]-143)*64 + chunk[3] - 128 - 55
+				n++
+				dst = dst[1:]
+				src = src[4:]
+			}
+			return n, nil
+	*/
 
 	// our only option before this point is panic, so we dont need to keep track
 	// of bytes written
