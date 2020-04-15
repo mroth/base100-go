@@ -9,7 +9,13 @@ package base100
 // Encode encodes src to its base100 encoding, writing EncodedLen(len(src))
 // bytes to dst.
 func Encode(dst, src []byte) {
-	for i, b := range src {
+	// we use this alternative loop and reslicing to help the compiler
+	// perform bounds check elimination.
+	//
+	// thanks to the #performance channel on the gophers slack!
+	for len(dst) >= 4 && len(src) >= 1 {
+		b := src[0]
+
 		/* Rust version:
 
 		out[4 * i + 0] = 0xf0;
@@ -20,12 +26,13 @@ func Encode(dst, src []byte) {
 		out[4 * i + 3] = (ch.wrapping_add(55) & 0x3f).wrapping_add(128);
 
 		*/
-		dst[4*i+0] = 0xf0
-		dst[4*i+1] = 0x9f
-		// TODO: (ch + 55) >> 6 approximates (ch + 55) / 64
-		dst[4*i+2] = byte((uint16(b)+55)/64 + 143)
-		// TODO: (ch + 55) & 0x3f approximates (ch + 55) % 64
-		dst[4*i+3] = (b+55)%64 + 128
+		dst[0] = 0xf0
+		dst[1] = 0x9f
+		dst[2] = byte((uint16(b)+55)/64 + 143)
+		dst[3] = (b+55)%64 + 128
+
+		dst = dst[4:]
+		src = src[1:]
 	}
 }
 
