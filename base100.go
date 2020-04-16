@@ -4,6 +4,10 @@
 // - Like base64,
 package base100
 
+import (
+	"io"
+)
+
 /* ENCODE */
 
 // Encode encodes src to its base100 encoding, writing EncodedLen(len(src))
@@ -125,4 +129,53 @@ func DecodeString(s string) ([]byte, error) {
 	return buf, err
 }
 
-// func NewEncoder(w io.Writer) io.WriteCloser
+/* ENCODER */
+
+// NewEncoder returns a new base100 stream encoder. Data written to
+// the returned writer will be encoded using base100 and then written to w.
+//
+// TODO: figure out the below in our world... NOT NEEDED
+// Base64 encodings operate in 4-byte blocks; when finished
+// writing, the caller must Close the returned encoder to flush any
+// partially written blocks.
+func NewEncoder(w io.Writer) io.Writer {
+	return &encoder{w: w}
+}
+
+const bufferSize = 1024
+
+type encoder struct {
+	w   io.Writer
+	err error
+	out [bufferSize]byte // output buffer
+}
+
+// Write implements io.Writer.
+func (e *encoder) Write(p []byte) (n int, err error) {
+	// Write writes len(p) bytes from p to the underlying data stream. It
+	// returns the number of bytes written from p (0 <= n <= len(p)) and any
+	// error encountered that caused the write to stop early. Write must return
+	// a non-nil error if it returns n < len(p). Write must not modify the slice
+	// data, even temporarily.
+	//
+	// Implementations must not retain p.
+
+	// A good reference here is https://golang.org/src/encoding/hex/hex.go
+	for len(p) > 0 && e.err == nil {
+		chunkSize := bufferSize / 4
+		if len(p) < chunkSize {
+			chunkSize = len(p)
+		}
+
+		chunk := p[:chunkSize]
+		Encode(e.out[:], chunk)
+		numBytesEncoded := EncodedLen(len(chunk))
+
+		var written int
+		written, e.err = e.w.Write(e.out[:numBytesEncoded])
+
+		n += written / 4 // TODO: ratio magic constant
+		p = p[chunkSize:]
+	}
+	return n, e.err
+}
