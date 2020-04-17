@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"reflect"
 	"testing"
 )
 
@@ -25,7 +24,7 @@ func TestEncode(t *testing.T) {
 			src := sc.data
 			dst := make([]byte, EncodedLen(len(src)))
 			Encode(dst, src)
-			if got, want := dst, sc.text; !reflect.DeepEqual(got, want) {
+			if got, want := dst, sc.text; !bytes.Equal(got, want) {
 				t.Errorf("Encode() = %v, want %v", got, want)
 			}
 		})
@@ -62,7 +61,7 @@ func TestDecode(t *testing.T) {
 			if (err != nil) != wantErr {
 				t.Errorf("err = %v, wantError: %v", err, wantErr)
 			}
-			if !reflect.DeepEqual(dst, wantDst) {
+			if !bytes.Equal(dst, wantDst) {
 				t.Errorf("dst = %v, want %v", dst, wantDst)
 			}
 		})
@@ -81,7 +80,7 @@ func TestDecodeString(t *testing.T) {
 			if wantErr := false; (err != nil) != wantErr {
 				t.Errorf("err = %v, wantError: %v", err, wantErr)
 			}
-			if want := sc.data; !reflect.DeepEqual(got, want) {
+			if want := sc.data; !bytes.Equal(got, want) {
 				t.Errorf("result = %v, want %v", got, want)
 			}
 		})
