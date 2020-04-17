@@ -28,10 +28,20 @@ func main() {
 	writer := bufio.NewWriter(out)
 	defer writer.Flush()
 
-	encoder := base100.NewEncoder(writer)
-	_, err := io.Copy(encoder, reader)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "FATAL: %v\n", err)
-		os.Exit(1)
+	if *decode {
+		// decoder currently dies due to lack of CRLF filtering
+		decoder := base100.NewDecoder(reader, false)
+		_, err := io.Copy(writer, decoder)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FATAL: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		encoder := base100.NewEncoder(writer)
+		_, err := io.Copy(encoder, reader)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FATAL: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }

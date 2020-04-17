@@ -179,3 +179,86 @@ func (e *encoder) Write(p []byte) (n int, err error) {
 	}
 	return n, e.err
 }
+
+/* DECODER */
+type decoder struct {
+	r   io.Reader
+	err error
+	in  []byte           // input buffer (encoded form)
+	arr [bufferSize]byte // backing array for in
+}
+
+// encodedByteSize is the byte size of a single "raw" byte after base100 encoding
+const encodedByteSize = 4
+
+func (d *decoder) Read(p []byte) (n int, err error) {
+	/* Reader is the interface that wraps the basic Read method.
+
+	Read reads up to len(p) bytes into p. It returns the number of bytes read (0
+	<= n <= len(p)) and any error encountered. Even if Read returns n < len(p),
+	it may use all of p as scratch space during the call. If some data is
+	available but not len(p) bytes, Read conventionally returns what is
+	available instead of waiting for more.
+
+	When Read encounters an error or end-of-file condition after successfully
+	reading n > 0 bytes, it returns the number of bytes read. It may return the
+	(non-nil) error from the same call or return the error (and n == 0) from a
+	subsequent call. An instance of this general case is that a Reader returning
+	a non-zero number of bytes at the end of the input stream may return either
+	err == EOF or err == nil. The next Read should return 0, EOF.
+
+	Callers should always process the n > 0 bytes returned before considering
+	the error err. Doing so correctly handles I/O errors that happen after
+	reading some bytes and also both of the allowed EOF behaviors.
+
+	Implementations of Read are discouraged from returning a zero byte count
+	with a nil error, except when len(p) == 0. Callers should treat a return of
+	0 and nil as indicating that nothing happened; in particular it does not
+	indicate EOF.
+
+	Implementations must not retain p.
+	*/
+
+	// Modeling this one after https://golang.org/src/encoding/base64/base64.go
+	// Hmm https://golang.org/src/encoding/hex/hex.go is better actually?
+
+	// assume \r \n stripped via stripper...
+
+	// Fill internal buffer with sufficient bytes to decode
+	if len(d.in) < encodedByteSize && d.err == nil {
+		var numCopy, numRead int
+		numCopy = copy(d.arr[:], d.in)             // Copies any remainder bytes [0-3] from before into beginning of backing array
+		numRead, d.err = d.r.Read(d.arr[numCopy:]) // read from internal reader with slice of rest of remaining internal buffer
+		d.in = d.arr[:numCopy+numRead]             // reset in to resliced arr containing all data
+
+		// handle case: we got an EOF but the bytes we have in our internal
+		// buffer are not a proper multiple of the encodedByteSize.
+		if d.err == io.EOF && len(d.in)%encodedByteSize != 0 {
+			// TODO: hex.go actually checks to see if there is an invalid encoding byte first, do something similar?
+			d.err = io.ErrUnexpectedEOF
+		}
+	}
+
+	if numDecodedBytesAvail := len(d.in) / encodedByteSize; len(p) > numDecodedBytesAvail {
+		p = p[:numDecodedBytesAvail] // reslice p to be only size needed...(why?)
+	}
+
+	numDecodedBytes, err := Decode(p, d.in[:len(p)*encodedByteSize]) // decode into p
+	d.in = d.in[encodedByteSize*numDecodedBytes:]                    // reslice in to remainder
+	// decode error; discard input remainder & bubble up error
+	if err != nil {
+		d.in, d.err = nil, err
+	}
+	// only expose errors when buffer fully consumed
+	if len(d.in) < encodedByteSize {
+		return numDecodedBytes, d.err
+	}
+
+	return numDecodedBytes, nil
+}
+
+func NewDecoder(r io.Reader) io.Reader {
+	return &decoder{r: r}
+}
+
+// func NewDecoder(r io.Reader, validated bool) io.Reader

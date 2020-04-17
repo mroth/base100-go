@@ -2,7 +2,9 @@
 package base100
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"reflect"
 	"testing"
 )
@@ -83,6 +85,58 @@ func TestDecodeString(t *testing.T) {
 				t.Errorf("result = %v, want %v", got, want)
 			}
 		})
+	}
+}
+
+var (
+	encoderDecoderMults = []int{1, 8, 128, 192}
+)
+
+func TestEncoder(t *testing.T) {
+	for _, mult := range encoderDecoderMults {
+		for j, sc := range samplecases {
+			t.Run(fmt.Sprintf("mult%03d/sample%02d", mult, j), func(t *testing.T) {
+				decoded := bytes.Repeat(sc.data, mult)
+				encoded := bytes.Repeat(sc.text, mult)
+
+				var buf bytes.Buffer
+				enc := NewEncoder(&buf)
+				n, err := enc.Write(decoded)
+				if n != len(decoded) {
+					t.Errorf("n = %d, want %d", n, len(decoded))
+				}
+				if err != nil {
+					t.Errorf("got error: %v", err)
+				}
+				if got := buf.Bytes(); !bytes.Equal(encoded, got) {
+					t.Errorf("want %x got %x", encoded, got)
+				}
+			})
+		}
+	}
+}
+
+func TestDecoder(t *testing.T) {
+	for _, mult := range encoderDecoderMults {
+		for j, sc := range samplecases {
+			t.Run(fmt.Sprintf("mult%03d/sample%02d", mult, j), func(t *testing.T) {
+				decoded := bytes.Repeat(sc.data, mult)
+				encoded := bytes.Repeat(sc.text, mult)
+
+				var buf bytes.Buffer
+				dec := NewDecoder(bytes.NewReader(encoded))
+				n, err := io.Copy(&buf, dec)
+				if n != int64(len(decoded)) {
+					t.Errorf("n = %d, want %d", n, len(decoded))
+				}
+				if err != nil {
+					t.Errorf("got error: %v", err)
+				}
+				if !bytes.Equal(decoded, buf.Bytes()) {
+					t.Errorf("want %q got %q", decoded, buf.Bytes())
+				}
+			})
+		}
 	}
 }
 
