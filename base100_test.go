@@ -1,4 +1,3 @@
-// Package base100 provides a Go implementation of base100
 package base100
 
 import (
