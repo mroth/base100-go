@@ -8,6 +8,10 @@ import (
 	"io"
 )
 
+const (
+	encodedByteSize = 4 // size of single "raw" byte after base100 encoding
+)
+
 /* ENCODE */
 
 // Encode encodes src to its base100 encoding, writing EncodedLen(len(src))
@@ -17,7 +21,7 @@ func Encode(dst, src []byte) {
 	// perform bounds check elimination.
 	//
 	// thanks to the #performance channel on the gophers slack!
-	for len(dst) >= 4 && len(src) >= 1 {
+	for len(dst) >= encodedByteSize && len(src) >= 1 {
 		b := src[0]
 
 		/* Rust version:
@@ -41,7 +45,7 @@ func Encode(dst, src []byte) {
 		dst[2] = byte((uint16(b)+55)/64 + 143)
 		dst[3] = (b+55)%64 + 128
 
-		dst = dst[4:]
+		dst = dst[encodedByteSize:]
 		src = src[1:]
 	}
 }
@@ -49,7 +53,7 @@ func Encode(dst, src []byte) {
 // EncodedLen returns the length in bytes of the base100 encoding of an input
 // buffer of length n.
 func EncodedLen(n int) int {
-	return n * 4
+	return n * encodedByteSize
 }
 
 // EncodeToString returns the base100 encoding of src.
@@ -81,13 +85,13 @@ func Decode(dst, src []byte) (n int, err error) {
 	        .wrapping_add(chunk[3].wrapping_sub(128)).wrapping_sub(55)
 	}
 	*/
-	max := len(src) / 4
+	max := len(src) / encodedByteSize
 	for i := 0; i < max; i++ {
 		// if checked, verify first and second position?
 		// pos1 := src[4*i+0]
 		// pos2 := src[4*i+1]
-		pos3 := src[4*i+2]
-		pos4 := src[4*i+3]
+		pos3 := src[encodedByteSize*i+2]
+		pos4 := src[encodedByteSize*i+3]
 		dst[i] = (pos3-143)*64 + pos4 - 128 - 55
 	}
 
@@ -113,12 +117,8 @@ func Decode(dst, src []byte) (n int, err error) {
 // DecodedLen returns the maximum length in bytes of the decoded data
 // corresponding to n bytes of base100-encoded data.
 func DecodedLen(n int) int {
-	// max would be no line breaks (e.g. every input is payload), so easy to
-	// calculate.
-	//
-	// if input is malformed length, doesnt matter here? since wont result in
-	// needing that space....
-	return n / 4
+	// max is no line breaks (e.g. every input is payload), easy to calculate
+	return n / encodedByteSize
 }
 
 // DecodeString returns the bytes represented by the base100 string s.
@@ -162,7 +162,7 @@ func (e *encoder) Write(p []byte) (n int, err error) {
 
 	// A good reference here is https://golang.org/src/encoding/hex/hex.go
 	for len(p) > 0 && e.err == nil {
-		chunkSize := bufferSize / 4
+		chunkSize := bufferSize / encodedByteSize
 		if len(p) < chunkSize {
 			chunkSize = len(p)
 		}
@@ -174,7 +174,7 @@ func (e *encoder) Write(p []byte) (n int, err error) {
 		var written int
 		written, e.err = e.w.Write(e.out[:numBytesEncoded])
 
-		n += written / 4 // TODO: ratio magic constant
+		n += written / encodedByteSize
 		p = p[chunkSize:]
 	}
 	return n, e.err
@@ -187,9 +187,6 @@ type decoder struct {
 	in  []byte           // input buffer (encoded form)
 	arr [bufferSize]byte // backing array for in
 }
-
-// encodedByteSize is the byte size of a single "raw" byte after base100 encoding
-const encodedByteSize = 4
 
 func (d *decoder) Read(p []byte) (n int, err error) {
 	/* Reader is the interface that wraps the basic Read method.
