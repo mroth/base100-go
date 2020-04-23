@@ -166,7 +166,7 @@ func BenchmarkEncodeToString(b *testing.B) {
 func BenchmarkDecode(b *testing.B) {
 	src := benchtext
 	dst := make([]byte, DecodedLen(len(src)))
-	b.SetBytes(int64(len(src)))
+	b.SetBytes(int64(DecodedLen(len(src))))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = Decode(dst, src)
@@ -175,7 +175,7 @@ func BenchmarkDecode(b *testing.B) {
 
 func BenchmarkDecodeString(b *testing.B) {
 	src := string(benchtext)
-	b.SetBytes(int64(len(src)))
+	b.SetBytes(int64(DecodedLen(len(src))))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = DecodeString(src)
