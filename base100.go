@@ -37,7 +37,7 @@ func Encode(dst, src []byte) {
 		dst[0] = 0xf0
 		dst[1] = 0x9f
 		// These bit shifting variations from Rust version don't appear to
-		// impact speed at all when benchmarking here, likely the Go compiler
+		// impact speed at all when benchmarking here, perhaps the Go compiler
 		// is smart enough to apply them already automatically?
 		//
 		// dst[2] = byte(((uint16(b) + 55) >> 6) + 143)
@@ -68,16 +68,14 @@ func EncodeToString(src []byte) string {
 // Decode decodes src using base100. It writes at most DecodedLen(len(src))
 // bytes to dst and returns the number of bytes written. If src contains invalid
 // base100 data, it will return the number of bytes successfully written and
-// CorruptInputError. New line characters (\r and \n) are ignored.
-//
-// TODO: dont bother to check for invalid data? or have different versions?
-// TODO: strip new lines (optional?)
+// CorruptInputError
 //
 // TODO: what is expected behavior if len(dst) < DecodedLen(len(dst)))? base64 will panic.
 func Decode(dst, src []byte) (n int, err error) {
-	// if len(data)%4 != 0 {
-	// 	return nil, ErrInvalidLength
+	// if len(src)%4 != 0 {
+	// 	return 0, errors.New("invalid length")
 	// }
+	// ^^ dont bother with this check, and a trailing CRLF will be sliced right off anyhow during BCE
 
 	/* Rust version:
 	for (i, chunk) in buf.chunks(4).enumerate() {
@@ -86,28 +84,40 @@ func Decode(dst, src []byte) (n int, err error) {
 	}
 	*/
 	max := len(src) / encodedByteSize
+
+	// wacky compiler shenanigans for bounds check elimination
+	const employBCE = true
+	if employBCE {
+		if len(dst) >= max && len(src) >= max*encodedByteSize {
+			dst = dst[:max]                 // BCE hint!
+			src = src[:max*encodedByteSize] // BCE hint!
+		} else {
+			panic("nope")
+		}
+	}
+
 	for i := 0; i < max; i++ {
 		// if checked, verify first and second position?
-		// pos1 := src[4*i+0]
-		// pos2 := src[4*i+1]
-		pos3 := src[encodedByteSize*i+2]
+		// pos1 := src[encodedByteSize*i+0]
+		// pos2 := src[encodedByteSize*i+1]
+		// if pos1 != 0xf0 || pos2 != 0x9f {
+		// 	return n, errors.New("TODO raise error")
+		// }
+		// n++
 		pos4 := src[encodedByteSize*i+3]
+		pos3 := src[encodedByteSize*i+2]
 		dst[i] = (pos3-143)*64 + pos4 - 128 - 55
 	}
 
-	/*
-		Version of  the loop that employs BCE similar to Encode(), however it
-		actually ends up being slower when benchmarked.
-
-			for len(dst) >= 1 && len(src) >= 4 {
-				chunk := src[:4]
-				dst[0] = (chunk[2]-143)*64 + chunk[3] - 128 - 55
-				n++
-				dst = dst[1:]
-				src = src[4:]
-			}
-			return n, nil
-	*/
+	// Version of the loop that employs BCE similar technique to Encode(),
+	// however it actually ends up being slower when benchmarked.
+	//
+	// for len(dst) >= 1 && len(src) >= 4 {
+	// 	chunk := src[:4]
+	// 	dst[0] = (chunk[2]-143)*64 + chunk[3] - 128 - 55
+	// 	dst = dst[1:]
+	// 	src = src[4:]
+	// }
 
 	// our only option before this point is panic, so we dont need to keep track
 	// of bytes written
