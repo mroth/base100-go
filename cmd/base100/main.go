@@ -11,6 +11,11 @@ import (
 	"github.com/mroth/base100-go"
 )
 
+const (
+	productShortName = "base💯"
+	productFullName  = "base💯 (Go)"
+)
+
 var (
 	decode = flag.Bool("decode", false, "decode data")
 )
@@ -30,7 +35,7 @@ func main() {
 
 	if *decode {
 		// decoder currently dies due to lack of CRLF filtering
-		decoder := base100.NewDecoder(reader, false)
+		decoder := base100.NewDecoder(reader)
 		_, err := io.Copy(writer, decoder)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "FATAL: %v\n", err)

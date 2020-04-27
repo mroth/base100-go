@@ -1,7 +1,6 @@
-// Package base100 provides a Go implementation of base100.
+// Package base100 provides a Go implementation of Base💯.
 //
-// Potential differences from the Rust implementation of base64.
-// - Like base64,
+// For the original Rust version see https://github.com/AdamNiederer/base100.
 package base100
 
 import (
