@@ -4,6 +4,7 @@
 package base100
 
 import (
+	"errors"
 	"io"
 )
 
@@ -106,16 +107,23 @@ func Decode(dst, src []byte) (n int, err error) {
 	}
 
 	for i := 0; i < max; i++ {
-		// if checked, verify first and second position?
-		// pos1 := src[encodedByteSize*i+0]
-		// pos2 := src[encodedByteSize*i+1]
-		// if pos1 != fixedByte1 || pos2 != fixedByte2 {
-		// 	return n, errors.New("TODO raise error")
-		// }
-		// n++
-		pos3 := src[encodedByteSize*i+2]
-		pos4 := src[encodedByteSize*i+3]
+		offset := encodedByteSize * i
+		// Optionally validate the prefix bytes are as expected on every rune.
+		// This is quite wasteful for performance, and the Rust version of the
+		// algorithm does not perform it, so leave it disabled here for now.
+		const validate = false
+		if validate {
+			pos1 := src[offset+0]
+			pos2 := src[offset+1]
+			if pos1 != fixedByte1 || pos2 != fixedByte2 {
+				return n, errors.New("invalid encoding")
+			}
+		}
+
+		pos3 := src[offset+2]
+		pos4 := src[offset+3]
 		dst[i] = (pos3-143)*64 + pos4 - 128 - 55
+		n++
 	}
 
 	// Alternate version of the loop that employs via a different BCE technique
@@ -128,10 +136,7 @@ func Decode(dst, src []byte) (n int, err error) {
 	// 			src = src[4:]
 	// 		}
 
-	// Currently our only option before reaching this point was panic, so we
-	// dont need to actually keep track of bytes written, and can just return
-	// the known max if we get here.
-	return max, nil
+	return n, nil
 }
 
 // DecodedLen returns the maximum length in bytes of the decoded data
