@@ -278,3 +278,38 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 
 	return numDecodedBytes, nil
 }
+
+// NewlineFilteringReader wraps an io.Reader and strips CRLF from the stream.
+//
+// This implementation is taken verbatim from the base64 module of the Go
+// standard library (where it is not exported, hence the copypasta).
+//
+// Currently this is not utilized the decoder by default, since it hits
+// performance very hard. Leaving here for now as a hint for the future.
+
+/*
+type NewlineFilteringReader struct {
+	wrapped io.Reader
+}
+
+func (r *NewlineFilteringReader) Read(p []byte) (int, error) {
+	n, err := r.wrapped.Read(p)
+	for n > 0 {
+		offset := 0
+		for i, b := range p[:n] {
+			if b != '\r' && b != '\n' {
+				if i != offset {
+					p[offset] = b
+				}
+				offset++
+			}
+		}
+		if offset > 0 {
+			return offset, err
+		}
+		// Previous buffer entirely whitespace, read again
+		n, err = r.wrapped.Read(p)
+	}
+	return n, err
+}
+*/
