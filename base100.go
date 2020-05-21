@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	encodedByteSize = 4 // size of single "raw" byte after base100 encoding
+	fixedByte1      = 0xf0 // 1st byte of an encoded base100 rune
+	fixedByte2      = 0x9f // 2nd byte of an encoded base100 rune
+	encodedByteSize = 4    // size of single "raw" byte after base100 encoding
 )
 
 /* ENCODE */
@@ -24,25 +26,24 @@ func Encode(dst, src []byte) {
 		b := src[0]
 
 		/* Rust version:
-
 		out[4 * i + 0] = 0xf0;
 		out[4 * i + 1] = 0x9f;
 		// (ch + 55) >> 6 approximates (ch + 55) / 64
 		out[4 * i + 2] = ((((*ch as u16).wrapping_add(55)) >> 6) + 143) as u8;
 		// (ch + 55) & 0x3f approximates (ch + 55) % 64
 		out[4 * i + 3] = (ch.wrapping_add(55) & 0x3f).wrapping_add(128);
-
 		*/
-		dst[0] = 0xf0
-		dst[1] = 0x9f
-		// These bit shifting variations from Rust version don't appear to
-		// impact speed at all when benchmarking here, perhaps the Go compiler
-		// is smart enough to apply them already automatically?
-		//
-		// dst[2] = byte(((uint16(b) + 55) >> 6) + 143)
-		// dst[3] = (b+55)&0x3f + 128
+		dst[0] = fixedByte1
+		dst[1] = fixedByte2
 		dst[2] = byte((uint16(b)+55)/64 + 143)
 		dst[3] = (b+55)%64 + 128
+		// dst[2] = byte(((uint16(b) + 55) >> 6) + 143)
+		// dst[3] = (b+55)&0x3f + 128
+		//
+		// ^^ These bit shifting variations from Rust version don't appear to
+		// impact speed at all when benchmarking here (in go1.14), let's assume
+		// the Go compiler is smart enough to apply them already automatically?
+		// Thus omit for readability.
 
 		dst = dst[encodedByteSize:]
 		src = src[1:]
@@ -74,7 +75,8 @@ func Decode(dst, src []byte) (n int, err error) {
 	// if len(src)%4 != 0 {
 	// 	return 0, errors.New("invalid length")
 	// }
-	// ^^ dont bother with this check, and a trailing CRLF will be sliced right off anyhow during BCE
+	/* we no longer need above check, as any trailing bytes will be sliced off
+	anyhow during BCE hinting */
 
 	/* Rust version:
 	for (i, chunk) in buf.chunks(4).enumerate() {
@@ -82,9 +84,17 @@ func Decode(dst, src []byte) (n int, err error) {
 	        .wrapping_add(chunk[3].wrapping_sub(128)).wrapping_sub(55)
 	}
 	*/
-	max := len(src) / encodedByteSize
 
-	// wacky compiler shenanigans for bounds check elimination
+	// Wacky compiler shenanigans for "undetected" bounds check elimination.
+	//
+	// When building with `go build -gcflags="-d=ssa/check_bce/debug=1"` this
+	// reports BCE has not occured for src, e.g. it sees `IsInBounds` checks
+	// occuring in the hoot loop, BUT the benchmarks nearly double from 550MB/s
+	// to 1GB/s, so this is clearly doing BCE despite gcflags not reporting it?
+	// Hence the "undetected" comment above. This lack of reporting may actually
+	// be a bug in the Go compiler toolchain, we should check in next patch
+	// version and file a bug if so.
+	max := len(src) / encodedByteSize
 	const employBCE = true
 	if employBCE {
 		if len(dst) >= max && len(src) >= max*encodedByteSize {
@@ -99,27 +109,28 @@ func Decode(dst, src []byte) (n int, err error) {
 		// if checked, verify first and second position?
 		// pos1 := src[encodedByteSize*i+0]
 		// pos2 := src[encodedByteSize*i+1]
-		// if pos1 != 0xf0 || pos2 != 0x9f {
+		// if pos1 != fixedByte1 || pos2 != fixedByte2 {
 		// 	return n, errors.New("TODO raise error")
 		// }
 		// n++
-		pos4 := src[encodedByteSize*i+3]
 		pos3 := src[encodedByteSize*i+2]
+		pos4 := src[encodedByteSize*i+3]
 		dst[i] = (pos3-143)*64 + pos4 - 128 - 55
 	}
 
-	// Version of the loop that employs BCE similar technique to Encode(),
-	// however it actually ends up being slower when benchmarked.
+	// Alternate version of the loop that employs via a different BCE technique
+	// similar to Encode(), however it ends up being slower when benchmarked:
 	//
-	// for len(dst) >= 1 && len(src) >= 4 {
-	// 	chunk := src[:4]
-	// 	dst[0] = (chunk[2]-143)*64 + chunk[3] - 128 - 55
-	// 	dst = dst[1:]
-	// 	src = src[4:]
-	// }
+	// 		for len(dst) >= 1 && len(src) >= 4 {
+	// 			chunk := src[:4]
+	// 			dst[0] = (chunk[2]-143)*64 + chunk[3] - 128 - 55
+	// 			dst = dst[1:]
+	// 			src = src[4:]
+	// 		}
 
-	// our only option before this point is panic, so we dont need to keep track
-	// of bytes written
+	// Currently our only option before reaching this point was panic, so we
+	// dont need to actually keep track of bytes written, and can just return
+	// the known max if we get here.
 	return max, nil
 }
 
