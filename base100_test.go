@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"testing"
 )
 
@@ -179,4 +180,35 @@ func BenchmarkDecodeString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = DecodeString(src)
 	}
+}
+
+func BenchmarkEncoder(b *testing.B) {
+	const bytesPerIter = 100_000
+	b.SetBytes(bytesPerIter)
+
+	encoder := NewEncoder(ioutil.Discard)
+	zero := DevZero(0)
+	for i := 0; i < b.N; i++ {
+		io.CopyN(encoder, zero, bytesPerIter)
+	}
+}
+
+func BenchmarkDecoder(b *testing.B) {
+	const bytesPerIter = 100_000
+	b.SetBytes(bytesPerIter)
+
+	decoder := NewDecoder(DevZero(0))
+	for i := 0; i < b.N; i++ {
+		io.CopyN(ioutil.Discard, decoder, bytesPerIter)
+	}
+}
+
+type DevZero int
+
+func (z DevZero) Read(b []byte) (n int, err error) {
+	for i := range b {
+		b[i] = 0
+	}
+
+	return len(b), nil
 }

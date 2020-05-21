@@ -156,13 +156,8 @@ func DecodeString(s string) ([]byte, error) {
 
 /* ENCODER */
 
-// NewEncoder returns a new base100 stream encoder. Data written to
-// the returned writer will be encoded using base100 and then written to w.
-//
-// TODO: figure out the below in our world... NOT NEEDED
-// Base64 encodings operate in 4-byte blocks; when finished
-// writing, the caller must Close the returned encoder to flush any
-// partially written blocks.
+// NewEncoder returns a new base100 stream encoder. Data written to the returned
+// writer will be encoded using base100 and then written to w.
 func NewEncoder(w io.Writer) io.Writer {
 	return &encoder{w: w}
 }
@@ -175,7 +170,6 @@ type encoder struct {
 	out [bufferSize]byte // output buffer
 }
 
-// Write implements io.Writer.
 func (e *encoder) Write(p []byte) (n int, err error) {
 	// Write writes len(p) bytes from p to the underlying data stream. It
 	// returns the number of bytes written from p (0 <= n <= len(p)) and any
@@ -206,6 +200,12 @@ func (e *encoder) Write(p []byte) (n int, err error) {
 }
 
 /* DECODER */
+
+// NewDecoder constructs a new base100 stream decoder.
+func NewDecoder(r io.Reader) io.Reader {
+	return &decoder{r: r}
+}
+
 type decoder struct {
 	r   io.Reader
 	err error
@@ -278,9 +278,3 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 
 	return numDecodedBytes, nil
 }
-
-func NewDecoder(r io.Reader) io.Reader {
-	return &decoder{r: r}
-}
-
-// func NewDecoder(r io.Reader, validated bool) io.Reader
