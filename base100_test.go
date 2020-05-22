@@ -67,8 +67,16 @@ func TestDecode(t *testing.T) {
 		})
 	}
 
-	// TODO: error/invalid cases....
-	// TODO: expect a panic when dst too small
+	// expect an error when dst too small
+	t.Run("dst too small", func(t *testing.T) {
+		const deficitBytes = 1
+		src := samplecases[0].text
+		dst := make([]byte, DecodedLen(len(src))-deficitBytes) // too small
+		_, err := Decode(dst, src)
+		if err == nil {
+			t.Fatalf("expected error != nil, got %v", err)
+		}
+	})
 }
 
 func TestDecodeString(t *testing.T) {

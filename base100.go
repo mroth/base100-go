@@ -103,7 +103,7 @@ func Decode(dst, src []byte) (n int, err error) {
 			// In the standard library implmentation of base64, if len(dst) <
 			// DecodedLen(len(dst))), the method will panic. However, it seems
 			// like we can be a bit more graceful here.
-			return n, errors.New("insufficient slice capacity")
+			return n, errors.New("insufficient slice size")
 		}
 	}
 
