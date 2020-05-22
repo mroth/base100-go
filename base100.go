@@ -67,11 +67,9 @@ func EncodeToString(src []byte) string {
 /* DECODE */
 
 // Decode decodes src using base100. It writes at most DecodedLen(len(src))
-// bytes to dst and returns the number of bytes written. If src contains invalid
-// base100 data, it will return the number of bytes successfully written and
-// CorruptInputError
+// bytes to dst and returns the number of bytes written.
 //
-// TODO: what is expected behavior if len(dst) < DecodedLen(len(dst)))? base64 will panic.
+// New line characters (\r and \n) should be stripped beforehand.
 func Decode(dst, src []byte) (n int, err error) {
 	// if len(src)%4 != 0 {
 	// 	return 0, errors.New("invalid length")
@@ -102,7 +100,10 @@ func Decode(dst, src []byte) (n int, err error) {
 			dst = dst[:max]                 // BCE hint!
 			src = src[:max*encodedByteSize] // BCE hint!
 		} else {
-			panic("nope")
+			// In the standard library implmentation of base64, if len(dst) <
+			// DecodedLen(len(dst))), the method will panic. However, it seems
+			// like we can be a bit more graceful here.
+			return n, errors.New("insufficient slice capacity")
 		}
 	}
 
