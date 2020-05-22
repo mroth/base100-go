@@ -19,10 +19,10 @@ const (
 // Encode encodes src to its base100 encoding, writing EncodedLen(len(src))
 // bytes to dst.
 func Encode(dst, src []byte) {
-	// we use this alternative loop and reslicing to help the compiler
+	// We use this alternative loop and reslicing to help the compiler
 	// perform bounds check elimination.
 	//
-	// thanks to the #performance channel on the gophers slack!
+	// Thanks to the #performance channel on the Gophers Slack!
 	for len(dst) >= encodedByteSize && len(src) >= 1 {
 		b := src[0]
 
@@ -97,7 +97,7 @@ func Decode(dst, src []byte) (n int, err error) {
 	// version and file a bug if so.
 	max := len(src) / encodedByteSize
 	const employBCE = true
-	if employBCE {
+	if employBCE { // ^^ hard coded enabled above
 		if len(dst) >= max && len(src) >= max*encodedByteSize {
 			dst = dst[:max]                 // BCE hint!
 			src = src[:max*encodedByteSize] // BCE hint!
@@ -112,7 +112,7 @@ func Decode(dst, src []byte) (n int, err error) {
 		// This is quite wasteful for performance, and the Rust version of the
 		// algorithm does not perform it, so leave it disabled here for now.
 		const validate = false
-		if validate {
+		if validate { // ^^ hard coded disabled above
 			pos1 := src[offset+0]
 			pos2 := src[offset+1]
 			if pos1 != fixedByte1 || pos2 != fixedByte2 {
@@ -171,15 +171,16 @@ type encoder struct {
 }
 
 func (e *encoder) Write(p []byte) (n int, err error) {
-	// Write writes len(p) bytes from p to the underlying data stream. It
-	// returns the number of bytes written from p (0 <= n <= len(p)) and any
-	// error encountered that caused the write to stop early. Write must return
-	// a non-nil error if it returns n < len(p). Write must not modify the slice
-	// data, even temporarily.
-	//
-	// Implementations must not retain p.
+	/* (io.Writer).Write() notes:
 
-	// A good reference here is https://golang.org/src/encoding/hex/hex.go
+	Write writes len(p) bytes from p to the underlying data stream. It returns
+	the number of bytes written from p (0 <= n <= len(p)) and any error
+	encountered that caused the write to stop early. Write must return a non-nil
+	error if it returns n < len(p). Write must not modify the slice data, even
+	temporarily.
+
+	Implementations must not retain p.
+	*/
 	for len(p) > 0 && e.err == nil {
 		chunkSize := bufferSize / encodedByteSize
 		if len(p) < chunkSize {
@@ -214,7 +215,9 @@ type decoder struct {
 }
 
 func (d *decoder) Read(p []byte) (n int, err error) {
-	/* Reader is the interface that wraps the basic Read method.
+	/* (io.Reader).Read() notes:
+
+	Reader is the interface that wraps the basic Read method.
 
 	Read reads up to len(p) bytes into p. It returns the number of bytes read (0
 	<= n <= len(p)) and any error encountered. Even if Read returns n < len(p),
@@ -241,8 +244,9 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 	Implementations must not retain p.
 	*/
 
-	// Modeling this one after https://golang.org/src/encoding/base64/base64.go
-	// Hmm https://golang.org/src/encoding/hex/hex.go is better actually?
+	// Some references for comparison and ideas:
+	// 	- https://golang.org/src/encoding/base64/base64.go
+	// 	- https://golang.org/src/encoding/hex/hex.go
 
 	// assume \r \n stripped via stripper...
 
@@ -256,7 +260,8 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 		// handle case: we got an EOF but the bytes we have in our internal
 		// buffer are not a proper multiple of the encodedByteSize.
 		if d.err == io.EOF && len(d.in)%encodedByteSize != 0 {
-			// TODO: hex.go actually checks to see if there is an invalid encoding byte first, do something similar?
+			// TODO: hex.go actually checks to see if there is an invalid
+			// encoding byte first, should we do something similar?
 			d.err = io.ErrUnexpectedEOF
 		}
 	}
@@ -267,10 +272,12 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 
 	numDecodedBytes, err := Decode(p, d.in[:len(p)*encodedByteSize]) // decode into p
 	d.in = d.in[encodedByteSize*numDecodedBytes:]                    // reslice in to remainder
-	// decode error; discard input remainder & bubble up error
+
+	// if decode error; discard input remainder & bubble up error
 	if err != nil {
 		d.in, d.err = nil, err
 	}
+
 	// only expose errors when buffer fully consumed
 	if len(d.in) < encodedByteSize {
 		return numDecodedBytes, d.err
