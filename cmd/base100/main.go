@@ -37,12 +37,13 @@ FLAGS:
 `, productFullName)
 	}
 
-	flag.BoolVar(&opts.decode, "decode", false, "")
-	flag.BoolVar(&opts.decode, "d", false, "")
-	flag.StringVar(&opts.input, "input", "", "")
-	flag.StringVar(&opts.input, "i", "", "")
-	flag.StringVar(&opts.output, "output", "", "")
-	flag.StringVar(&opts.output, "o", "", "")
+	const nodesc = "" // descriptions not shown since we override flag.Usage
+	flag.BoolVar(&opts.decode, "decode", false, nodesc)
+	flag.BoolVar(&opts.decode, "d", false, nodesc)
+	flag.StringVar(&opts.input, "input", "", nodesc)
+	flag.StringVar(&opts.input, "i", "", nodesc)
+	flag.StringVar(&opts.output, "output", "", nodesc)
+	flag.StringVar(&opts.output, "o", "", nodesc)
 
 	flag.Parse()
 	return
