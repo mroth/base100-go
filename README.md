@@ -1,6 +1,7 @@
 # Base💯
 
-A Go implementation of [base100](https://github.com/AdamNiederer/base100).
+A Go implementation of [base100](https://github.com/AdamNiederer/base100) with a
+permissive software license.
 
 Base💯 can represent any byte with a unique emoji symbol, therefore it can
 represent binary data with zero printable overhead.
@@ -55,7 +56,3 @@ BenchmarkDecodeString-8          9466012               121 ns/op         371.00 
 BenchmarkEncoder-8                  6042            178455 ns/op         560.37 MB/s
 BenchmarkDecoder-8                 11887             97977 ns/op        1020.65 MB/s
 ```
-
-## License
-
-TODO
