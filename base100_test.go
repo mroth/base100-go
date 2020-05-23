@@ -42,6 +42,12 @@ func TestEncodeToString(t *testing.T) {
 	}
 }
 
+func ExampleEncodeToString() {
+	src := []byte("the quick brown fox jumped over the lazy dog\n")
+	fmt.Println(EncodeToString(src))
+	// Output: 👫👟👜🐗👨👬👠👚👢🐗👙👩👦👮👥🐗👝👦👯🐗👡👬👤👧👜👛🐗👦👭👜👩🐗👫👟👜🐗👣👘👱👰🐗👛👦👞🐁
+}
+
 func TestDecode(t *testing.T) {
 	// handle all "normal" sample cases
 	for n, sc := range samplecases {
@@ -93,6 +99,13 @@ func TestDecodeString(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleDecodeString() {
+	src := "👫👟👜🐗👨👬👠👚👢🐗👙👩👦👮👥🐗👝👦👯🐗👡👬👤👧👜👛🐗👦👭👜👩🐗👫👟👜🐗👣👘👱👰🐗👛👦👞🐁"
+	result, _ := DecodeString(src)
+	fmt.Printf("%s", result)
+	// Output: the quick brown fox jumped over the lazy dog
 }
 
 var (
