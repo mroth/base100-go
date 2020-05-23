@@ -52,18 +52,32 @@ FLAGS:
 func main() {
 	opts := cliParse()
 
-	if opts.input != "" || opts.output != "" {
-		log.Fatal("TODO: not handling files just yet...")
+	in := os.Stdin
+	if opts.input != "" {
+		var err error
+		in, err = os.Open(opts.input)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer in.Close()
 	}
-	in, out := os.Stdin, os.Stdout
-	defer out.Close()
+
+	out := os.Stdout
+	if opts.output != "" {
+		var err error
+		out, err = os.Create(opts.output)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer out.Close()
+	}
 
 	reader := bufio.NewReader(in)
 	writer := bufio.NewWriter(out)
 	defer writer.Flush()
 
 	if opts.decode {
-		// decoder currently dies due to lack of CRLF filtering
+		// decoder currently can die due to lack of CRLF filtering
 		decoder := base100.NewDecoder(reader)
 		_, err := io.Copy(writer, decoder)
 		if err != nil {
