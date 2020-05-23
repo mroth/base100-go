@@ -9,7 +9,9 @@ represent binary data with zero printable overhead.
 
 ### Library
 
-See the Go Docs for more information.
+The API is nearly identical to other modules from the Go `encoding/*` standard
+library. See the [Go Docs](https://godoc.org/github.com/mroth/base100-go) for
+more information.
 
 ### Command line tool
 
