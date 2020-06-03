@@ -1,0 +1,5 @@
+title: gobenchdata web
+description: Benchmarks generated using 'gobenchdata'
+repository: https://github.com/mroth/base100-go
+benchmarksFile: benchmarks.json
+chartGroups: []
