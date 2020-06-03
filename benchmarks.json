@@ -1,0 +1,78 @@
+[
+  {
+    "Version": "e12fa3c3ca80bb7c69b81c6ce1bb12bb9c43ffd4",
+    "Date": 1591197113,
+    "Tags": [
+      "ref=refs/heads/cibench"
+    ],
+    "Suites": [
+      {
+        "Goos": "linux",
+        "Goarch": "amd64",
+        "Pkg": "github.com/mroth/base100-go",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkEncode-2",
+            "Runs": 8294210,
+            "NsPerOp": 145,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 311.08
+            }
+          },
+          {
+            "Name": "BenchmarkEncodeToString-2",
+            "Runs": 4146188,
+            "NsPerOp": 285,
+            "Mem": {
+              "BytesPerOp": 384,
+              "AllocsPerOp": 2,
+              "MBPerSec": 158.16
+            }
+          },
+          {
+            "Name": "BenchmarkDecode-2",
+            "Runs": 12038871,
+            "NsPerOp": 96.7,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 465.36
+            }
+          },
+          {
+            "Name": "BenchmarkDecodeString-2",
+            "Runs": 5511667,
+            "NsPerOp": 217,
+            "Mem": {
+              "BytesPerOp": 240,
+              "AllocsPerOp": 2,
+              "MBPerSec": 206.98
+            }
+          },
+          {
+            "Name": "BenchmarkEncoder-2",
+            "Runs": 4024,
+            "NsPerOp": 302898,
+            "Mem": {
+              "BytesPerOp": 32800,
+              "AllocsPerOp": 2,
+              "MBPerSec": 330.14
+            }
+          },
+          {
+            "Name": "BenchmarkDecoder-2",
+            "Runs": 6088,
+            "NsPerOp": 188470,
+            "Mem": {
+              "BytesPerOp": 33,
+              "AllocsPerOp": 1,
+              "MBPerSec": 530.59
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
