@@ -11,7 +11,7 @@ represent binary data with zero printable overhead.
 ### Library
 
 The API is nearly identical to other modules from the Go `encoding/*` standard
-library. See the [Go Docs](https://godoc.org/github.com/mroth/base100-go) for
+library. See the [Go Docs](https://pkg.go.dev/github.com/mroth/base100-go) for
 more information.
 
 ### Command line tool
@@ -38,21 +38,22 @@ unless `--decode` is specified
 ## Performance
 
 The implementation is fairly performant, and appears to perform roughly
-equivalent to the standard Rust version (e.g. non-AVX) on my machine. A future
-optimization utilizing SIMD/AVX could be possible with Go assembly code, however
-the throughput already far exceeds any known use case I can see for this, so
-I'll leave that out unless I get incredibly bored some day.
+equivalent to the scalar Rust version on my machine. A future optimization
+utilizing SIMD/AVX could be possible with Go assembly code, however the
+throughput already far exceeds any known use case I can see for this, so I'll
+leave that out unless I get incredibly bored some day.
 
-Library benchmarks from my laptop (the throughput values as the relevant ones):
+Library single-cpu benchmarks from my laptop (the throughput values are the
+relevant ones):
 ```
-$ go test -bench=.
+$ go test -bench=. -cpu=1
 goos: darwin
-goarch: amd64
+goarch: arm64
 pkg: github.com/mroth/base100-go
-BenchmarkEncode-8               15173618                72.9 ns/op       617.19 MB/s
-BenchmarkEncodeToString-8        7025580               167 ns/op         269.30 MB/s
-BenchmarkDecode-8               25826598                41.5 ns/op      1084.97 MB/s
-BenchmarkDecodeString-8          9466012               121 ns/op         371.00 MB/s
-BenchmarkEncoder-8                  6042            178455 ns/op         560.37 MB/s
-BenchmarkDecoder-8                 11887             97977 ns/op        1020.65 MB/s
+BenchmarkEncode         	24294966	        48.73 ns/op	 923.39 MB/s
+BenchmarkEncodeToString 	12771414	        96.26 ns/op	 467.49 MB/s
+BenchmarkDecode         	31148536	        38.45 ns/op	1170.40 MB/s
+BenchmarkDecodeString   	16720785	        71.30 ns/op	 631.15 MB/s
+BenchmarkEncoder        	   10000	    109727 ns/op	 911.35 MB/s
+BenchmarkDecoder        	   15538	     77681 ns/op	1287.31 MB/s
 ```
