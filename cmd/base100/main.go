@@ -72,8 +72,9 @@ func main() {
 		defer out.Close()
 	}
 
-	reader := bufio.NewReader(in)
-	writer := bufio.NewWriter(out)
+	bufsize := 1024 * 64 // 64 KiB io buffers, same as pipe buffer in linux >=2.6.11
+	reader := bufio.NewReaderSize(in, bufsize)
+	writer := bufio.NewWriterSize(out, bufsize)
 	defer writer.Flush()
 
 	if opts.decode {
