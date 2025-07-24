@@ -50,10 +50,11 @@ $ go test -bench=. -cpu=1
 goos: darwin
 goarch: arm64
 pkg: github.com/mroth/base100-go
-BenchmarkEncode         	24294966	        48.73 ns/op	 923.39 MB/s
-BenchmarkEncodeToString 	12771414	        96.26 ns/op	 467.49 MB/s
-BenchmarkDecode         	31148536	        38.45 ns/op	1170.40 MB/s
-BenchmarkDecodeString   	16720785	        71.30 ns/op	 631.15 MB/s
-BenchmarkEncoder        	   10000	    109727 ns/op	 911.35 MB/s
-BenchmarkDecoder        	   15538	     77681 ns/op	1287.31 MB/s
+cpu: Apple M2 Pro
+BenchmarkEncode                 24076875                49.24 ns/op      913.81 MB/s
+BenchmarkEncodeToString         12909928                90.94 ns/op      494.83 MB/s
+BenchmarkDecode                 31709400                37.85 ns/op     1189.02 MB/s
+BenchmarkDecodeString           25889036                45.45 ns/op      990.11 MB/s
+BenchmarkEncoder                   18339             65083 ns/op        1006.96 MB/s
+BenchmarkDecoder                   21528             56465 ns/op        1160.65 MB/s
 ```

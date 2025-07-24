@@ -2,9 +2,9 @@ package base100
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 )
 
@@ -191,32 +191,35 @@ func BenchmarkDecodeString(b *testing.B) {
 }
 
 func BenchmarkEncoder(b *testing.B) {
-	const bytesPerIter = 100_000
+	const bytesPerIter = 64 * 1024 // 64 KiB
 	b.SetBytes(bytesPerIter)
 
-	encoder := NewEncoder(ioutil.Discard)
-	zero := DevZero(0)
+	encoder := NewEncoder(io.Discard)
+	data := make([]byte, bytesPerIter)
+	_, _ = rand.Read(data)
+	src := bytes.NewReader(data)
+
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		io.CopyN(encoder, zero, bytesPerIter)
+		io.Copy(encoder, src)
+		src.Reset(data)
 	}
 }
 
 func BenchmarkDecoder(b *testing.B) {
-	const bytesPerIter = 100_000
+	const bytesPerIter = 64 * 1024 // 64 KiB
 	b.SetBytes(bytesPerIter)
 
-	decoder := NewDecoder(DevZero(0))
+	data := make([]byte, bytesPerIter)
+	_, _ = rand.Read(data)
+	encoded := make([]byte, EncodedLen(len(data)))
+	Encode(encoded, data)
+
+	src := bytes.NewReader(encoded)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		io.CopyN(ioutil.Discard, decoder, bytesPerIter)
+		decoder := NewDecoder(src)
+		io.Copy(io.Discard, decoder)
+		src.Reset(encoded)
 	}
-}
-
-type DevZero int
-
-func (z DevZero) Read(b []byte) (n int, err error) {
-	for i := range b {
-		b[i] = 0
-	}
-
-	return len(b), nil
 }
