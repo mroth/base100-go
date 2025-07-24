@@ -1,3 +1,3 @@
 module github.com/mroth/base100-go
 
-go 1.13
+go 1.22
