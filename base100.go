@@ -107,7 +107,7 @@ func Decode(dst, src []byte) (n int, err error) {
 		}
 	}
 
-	for i := 0; i < max; i++ {
+	for i := range max {
 		offset := encodedByteSize * i
 		// Optionally validate the prefix bytes are as expected on every rune.
 		// This is quite wasteful for performance, and the Rust version of the
@@ -183,10 +183,7 @@ func (e *encoder) Write(p []byte) (n int, err error) {
 	Implementations must not retain p.
 	*/
 	for len(p) > 0 && e.err == nil {
-		chunkSize := bufferSize / encodedByteSize
-		if len(p) < chunkSize {
-			chunkSize = len(p)
-		}
+		chunkSize := min(len(p), bufferSize/encodedByteSize)
 
 		chunk := p[:chunkSize]
 		Encode(e.out[:], chunk)
