@@ -1,5 +1,7 @@
 # Base💯
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/mroth/base100-go.svg)](https://pkg.go.dev/github.com/mroth/base100-go)
+
 A Go implementation of [base100](https://github.com/AdamNiederer/base100) with a
 permissive software license.
 
